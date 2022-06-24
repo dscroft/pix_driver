@@ -48,11 +48,30 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
- add_message_files(
+add_message_files(
    FILES
-   pix_feedback.msg
-   pix_control.msg
-#   Message2.msg
+   Auto_brake_feedback.msg
+   Auto_brake_feedback_stamped.msg
+   Auto_control.msg
+   Auto_control_stamped.msg
+   Auto_data_feedback.msg
+   Auto_data_feedback_stamped.msg
+   Auto_motor_speed_feedback.msg
+   Auto_motor_speed_feedback_stamped.msg
+   Auto_motor_status_feedback.msg
+   Auto_motor_status_feedback_stamped.msg
+   Auto_status_feedback.msg
+   Auto_status_feedback_stamped.msg
+   Auto_steer_control.msg
+   Auto_steer_control_stamped.msg
+   Auto_steer_status.msg
+   Auto_steer_status_stamped.msg
+   Auto_steer_status_feedback.msg
+   Auto_steer_status_feedback_stamped.msg
+   #pix_control.msg
+   #pix_control_stamped.msg
+   #pix_feedback.msg
+   #pix_feedback_stamped.msg
 )
 
 ## Generate services in the 'srv' folder

@@ -1,0 +1,2 @@
+int16 Discharge_current_feedback
+int16 Battery_power_feedback

@@ -1,0 +1,12 @@
+float64 Speed
+float64 FrontSteering
+float64 Braking
+int8 Gear
+int8 mode_feedback
+bool LeftLight
+bool RightLight
+bool RearLight
+bool BrakeLight
+bool Vehicle_status_feedback
+bool Vehicle_mode_feedback
+bool Emergency

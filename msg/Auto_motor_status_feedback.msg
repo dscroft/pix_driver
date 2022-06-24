@@ -1,0 +1,9 @@
+int8 Speed_mode
+bool RR_steer_direction_feedback
+bool RF_steer_direction_feedback
+bool LR_steer_direction_feedback
+bool LF_steer_direction_feedback
+bool RR_status_feedback
+bool RF_status_feedback
+bool LR_status_feedback
+bool LF_status_feedback

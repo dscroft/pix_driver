@@ -1,66 +1,134 @@
-#!/usr/bin/env python
-import rospy
-from std_msgs.msg import Int16MultiArray
-from pix_driver.msg import pix_control
-import std_msgs.msg
-from dbc import decode_dbc
+#!/usr/bin/env python3
+
+import sys
+import math
+
 import can
+import cantools
+import os
 
+import rospkg
+import rospy
+from rospy_message_converter import message_converter
+# allow converstion from bool to int and int to bool
+#message_converter.ros_to_python_type_map["bool"] += copy.deepcopy( message_converter.python_int_types)
 
-dbc_path = rospy.get_param("dbc_path")
-can_type = rospy.get_param("can_type")
-can_channel = rospy.get_param("can_channel")
+import pix_driver
+from pix_driver.msg import *
 
-ms = decode_dbc(dbc_path)
-m = ms.get_message_by_name('Auto_control')
-code = m.encode({'Steering': 0})
+packagePath = rospkg.RosPack().get_path( "pix_driver" )
+dbcFilename = "ros_units.dbc"
+dbc_path = os.path.join( packagePath, "src", dbcFilename )
 
-bus = can.interface.Bus(bustype=can_type, channel=can_channel, bitrate=500000)
+#rospy.get_param( "dbc_path" )
+can_type = rospy.get_param( "can_type")
+can_channel = rospy.get_param( "can_channel" )
 
-pub = rospy.Publisher('canbus_message', Int16MultiArray, queue_size=1)
+def kill_switch( dbc, candata ):
+    maxSteerRaw = 1024  # must be 1024, do not change on pain of pain
+    maxSpeedRaw = 600   # must be 600, ditto ^
 
-def callback(data):
-    speed = max( 0.0, data.Speed ) / 0.0277778 # ms to kmh then /10
-    steer = -data.Steer * 1955.69664 # (57.2958 * 1024) / 30
-    brake = max( 0.0, min( 1.0, data.Brake ) ) * 1024
+    # make absolutely certain that NO steering values over maxSteerRaw
+    # or speed values over 600 get sent, even if someone messes with the dbc file
+    if dbc.frame_id == 387:
+        if maxSteerRaw < abs( int.from_bytes( candata[4:6], "little", signed=True ) ):
+            raise ValueError( "Steering out of range" )
+        
+        if maxSpeedRaw < int.from_bytes( candata[0:2], "little", signed=False ):
+            raise ValueError( "Speed out of range" )
 
+    elif dbc.frame_id == 390:
+        if maxSteerRaw < abs( int.from_bytes( candata[0:2], "little", signed=True ) ):
+            raise ValueError( "Front steering out of range" )
+
+        if maxSteerRaw < abs( int.from_bytes( candata[6:8], "little", signed=True ) ):
+            raise ValueError( "Rear steering out of range" )
+
+    elif dbc.frame_id == 392:
+        if maxSpeedRaw < int.from_bytes( candata[0:2], "little", signed=False ):
+            raise ValueError( "Front left speed out of range" )
+
+        if maxSpeedRaw < int.from_bytes( candata[2:4], "little", signed=False ):
+            raise ValueError( "Rear left speed out of range" )
+            
+        if maxSpeedRaw < int.from_bytes( candata[4:6], "little", signed=False ):
+            raise ValueError( "Front right speed out of range" )
+            
+        if maxSpeedRaw < int.from_bytes( candata[6:8], "little", signed=False ):
+            raise ValueError( "Rear right speed out of range" )
+
+def send_can_callback( bus, dbc, rosdata, limits={} ):
+    #rospy.loginfo( rosdata )
+
+    # convert ros message to dictionary
+    data = message_converter.convert_ros_message_to_dictionary( rosdata )
+
+    # I am using strict mode to encode the can frames so it is 
+    # not possible to send values greater than those listed in the dbc 
+    # but, I don't want to have to do steering and velocity limiting 
+    # code every single time I write a node that controls the pixkit.
+    # So to compromise, if an out of bounds steering or velocity value is
+    # recieved, constrain it to the limits.
+    for field, ( mn, mx ) in limits.items():
+       data[field] = min( mx, max( mn, data[field] ) )
+
+    # convert dictionary to can frame
+    candata = dbc.encode( data, strict=True )
+
+    # throw exception if the message that is about to be sent could 
+    # cause damage
+    kill_switch( dbc, candata )
+
+    # send can frame
+    bus.send( can.Message( arbitration_id=dbc.frame_id, data=candata ) )
+
+def main():
+    rospy.init_node( "pixkit_control", log_level=rospy.DEBUG )
+
+    db = cantools.database.load_file( dbc_path )
+
+    # === create a publisher for each message type ===
+    subs = {}
+    filters = []
+    for i in db.messages:
+        # only subscribe to message that go to the VCU
+        if "VCU" in i.senders: continue
+
+        try:
+            dbc = db.get_message_by_frame_id( i.frame_id )
+
+            limits = {}
+            for signal in dbc.signals:
+                if signal.name.lower() in ( "steering", "speed", "braking" ):
+                    limits[signal.name] = ( signal.minimum, signal.maximum )
+
+            subs[i.frame_id] = rospy.Subscriber( f"~{i.name}", \
+                                getattr( pix_driver.msg, f"{i.name}_stamped" ), \
+                                lambda m: send_can_callback( bus, dbc, m.data, limits ) )
+
+            filters.append( {"can_id": i.frame_id, 
+                             "can_mask": 0x1FFFFFFF, 
+                             "extended": i.is_extended_frame} )
+        except AttributeError:  # no corresponding msg for this frame
+            rospy.logwarn( f"No msg for {i.name}" )
+
+    # === open can device ===
     try:
-        can_message = m.encode({
-            'Speed': int(round(speed)),
-            'Steering': int(round(steer)),
-            'Braking': int(round(brake)),
-            'Gear_shift': data.Gear,
-            'EPB': int(data.Handbrake),
-            'right_light': int(data.RightLight),
-            'left_light': int(data.LeftLight),
-            'Front_light': int(data.Light),
-            'self_driving_enable': int(data.SelfDrive),
-            'Speed_mode': data.SpeedMode,
-            'Advanced_mode': 0,
-            'mode_selection': data.SteerMode,
-            'State_control': int(data.Emergency)
-            })
-        can_message = [387] + can_message
+        bus = can.interface.Bus( channel=can_channel, bustype=can_type,
+                    can_filters=filters )
+    except OSError:
+        rospy.logerr( f"Failed to open {can_channel}" )
+        return 1
 
-    except:
-        can_message = [387] + 8*[0]
-
-    send_message = can.Message(arbitration_id=387, data=can_message[1:], is_extended_id=False)
-    bus.send(send_message)
-    message = Int16MultiArray(data=can_message)
-    rospy.loginfo(message.data)
-    pub.publish(message)
-
-
-
-def listener():
-    rospy.init_node('listener', anonymous=True)
-    rospy.Subscriber("control_cmd", pix_control, callback)
     rospy.spin()
 
+    bus.shutdown()
 
-if __name__ == "__main__":
-    try:
-        listener()
-    except rospy.ROSInterruptException:
-        pass
+    return 0
+
+if __name__ == '__main__':
+    #try:
+    #    main()
+    #except rospy.ROSInternalException:
+    #    pass
+    sys.exit( main() )
