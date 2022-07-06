@@ -1,7 +1,7 @@
 Header header
 float64 Speed
-float64 Steer
-float64 Brake
+float64 Steering
+float64 Braking
 uint8 Gear
 bool Handbrake
 bool RightLight

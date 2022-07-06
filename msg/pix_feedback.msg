@@ -1,4 +1,3 @@
-Header header
 float64 Speed_feedback
 float64 F_steer_feedback
 float64 Braking_feedback

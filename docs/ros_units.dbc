@@ -1,0 +1,173 @@
+VERSION ""
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: Auto VCU
+
+BO_ 410 Auto_brake_feedback: 3 VCU
+ SG_ Braking_enable_feedback : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Braking_value_feedback : 0|16@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 409 Auto_motor_status_feedback: 2 VCU
+ SG_ Speed_mode : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ RR_steer_direction_feedback : 7|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ RF_steer_direction_feedback : 6|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ LR_steer_direction_feedback : 5|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ LF_steer_direction_feedback : 4|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ RR_status_feedback : 3|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ RF_status_feedback : 2|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ LR_status_feedback : 1|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ LF_status_feedback : 0|1@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 408 Auto_motor_speed_feedback: 8 VCU
+ SG_ RR_Wheel_speed_feedback : 48|16@1- (0.027777777777778,0) [0|32767] "m/s" Vector__XXX
+ SG_ RF_Wheel_speed_feedback : 32|16@1- (0.027777777777778,0) [0|32767] "m/s" Vector__XXX
+ SG_ LR_Wheel_speed_feedback : 16|16@1- (0.027777777777778,0) [0|32767] "m/s" Vector__XXX
+ SG_ LF_Wheel_speed_feedback : 0|16@1- (0.027777777777778,0) [0|32767] "m/s" Vector__XXX
+
+BO_ 406 Auto_steer_status_feedback: 5 VCU
+ SG_ B_steer_status_feedback : 34|2@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ F_steer_status_feedback : 32|2@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ B_steer_angle_feedback : 16|16@1- (0.000511326929295,0) [-1024|1024] "radians" Vector__XXX
+ SG_ F_steer_angle_feedback : 0|16@1- (0.000511326929295,0) [-1024|1024] "radians" Vector__XXX
+
+BO_ 404 Auto_status_feedback: 4 VCU
+ SG_ Discharge_current_feedback : 16|16@1- (1,0) [0|0] "" Vector__XXX
+ SG_ Battery_power_feedback : 0|16@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 403 pix_feedback: 8 VCU
+ SG_ Emergency_stop_feedback : 62|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Vehicle_mode_feedback : 61|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Vehicle_status_feedback : 60|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Braking_light_feedback : 59|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Tail_light_feedback : 58|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ R_steer_light_feedback : 57|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ L_steer_light_feedback : 56|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ mode_feedback : 52|2@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Gear_feedback : 48|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ Braking_feedback : 32|16@1+ (1,0) [0|1000] "" Vector__XXX
+ SG_ F_steer_feedback : 16|16@1- (1,0) [-1024|1024] "" Vector__XXX
+ SG_ Speed_feedback : 0|16@1- (1,0) [0|600] "" Vector__XXX
+
+BO_ 403 Auto_data_feedback: 8 VCU
+ SG_ Emergency : 62|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Vehicle_mode_feedback : 61|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Vehicle_status_feedback : 60|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ BrakeLight : 59|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ RearLight : 58|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ RightLight : 57|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ LeftLight : 56|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ mode_feedback : 52|2@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Gear : 48|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ Braking : 32|16@1+ (1,0) [0|1000] "" Vector__XXX
+ SG_ FrontSteering : 16|16@1- (0.000511326929295,0) [0|0] "" Vector__XXX
+ SG_ Speed : 0|16@1- (1,0) [-600|600] "" Vector__XXX
+
+VAL_ 403 RightLight 0 "OFF" 1 "ON";
+
+BO_ 394 Auto_braking: 3 Auto
+ SG_ enable : 16|8@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ value : 0|16@1+ (0.0009765625,0) [0|1] "proportion" Vector__XXX
+
+BO_ 393 Auto_motor_status: 2 Auto
+ SG_ mode_feedback : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ RR_steer_direction : 7|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ RF_steer_direction : 6|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ LR_steer_direction : 5|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ LF_steer_direction : 4|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ RR_enable : 3|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ RF_enable : 2|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ LR_enable : 1|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ LF_enable : 0|1@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 392 Auto_motor_control: 8 Auto
+ SG_ RR_motor : 48|16@1+ (1,0) [0|1024] "" Vector__XXX
+ SG_ RF_motor : 32|16@1+ (1,0) [0|1024] "" Vector__XXX
+ SG_ LR_motor : 16|16@1+ (1,0) [0|1024] "" Vector__XXX
+ SG_ LF_motor : 0|16@1+ (1,0) [0|1024] "" Vector__XXX
+
+BO_ 391 Auto_steer_status: 2 Auto
+ SG_ B_steer_enable : 4|4@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ F_steer_enable : 0|4@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 390 Auto_steer_control: 8 Auto
+ SG_ B_steer_angular_velocity : 48|16@1- (1,0) [0|0] "" Vector__XXX
+ SG_ B_steer_angle : 32|16@1- (1,0) [0|0] "" Vector__XXX
+ SG_ F_steer_angular_velocity : 16|16@1- (1,0) [0|0] "" Vector__XXX
+ SG_ F_steer_angle : 0|16@1- (1,0) [0|0] "" Vector__XXX
+
+BO_ 387 pix_control: 8 Auto
+ SG_ SelfDrive : 63|1@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ Advanced : 61|1@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ Emergency : 57|1@1+ (1,0) [0|0] "off/on" Vector__XXX
+ SG_ SpeedMode : 62|1@1+ (1,0) [0|2] "slow/slow/fast" Vector__XXX
+ SG_ RightLight : 58|1@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ LeftLight : 56|1@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ FrontLight : 60|1@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ Handbrake : 59|1@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ SteerMode : 52|4@1+ (1,0) [0|2] "normal/opposite/synchro" Vector__XXX
+ SG_ Gear : 48|4@1+ (1,0) [0|3] "neutral/forward/neutral/reverse" Vector__XXX
+ SG_ Steering : 32|16@1- (1,0) [-1024|1024] "radians" Vector__XXX
+ SG_ Braking : 16|16@1+ (1,0) [0|1024] "proportion" Vector__XXX
+ SG_ Speed : 0|16@1+ (1,0) [0|1024] "m/s" Vector__XXX
+
+BO_ 387 Auto_control: 8 Auto
+ SG_ SelfDrive : 63|1@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ Advanced : 61|1@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ Emergency : 57|1@1+ (1,0) [0|0] "off/on" Vector__XXX
+ SG_ SpeedMode : 62|1@1+ (1,0) [0|2] "slow/slow/fast" Vector__XXX
+ SG_ RightLight : 58|1@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ LeftLight : 56|1@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ FrontLight : 60|1@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ Handbrake : 59|1@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ SteerMode : 52|4@1+ (1,0) [0|2] "normal/opposite/synchro" Vector__XXX
+ SG_ Gear : 48|4@1+ (1,0) [0|3] "neutral/forward/neutral/reverse" Vector__XXX
+ SG_ Steering : 32|16@1- (0.000511326929295,0) [-0.523598775598299|0.523598775598299] "radians" Vector__XXX
+ SG_ Braking : 16|16@1+ (0.0009765625,0) [0|1] "proportion" Vector__XXX
+ SG_ Speed : 0|16@1+ (0.027777777777778,0) [0|16.6666666666667] "m/s" Vector__XXX
+
+VAL_ 387 SelfDrive 0 "OFF" 1 "ON";
+VAL_ 387 Advanced 0 "OFF" 1 "ON";
+VAL_ 387 Emergency 0 "OFF" 1 "ON";
+VAL_ 387 SpeedMode 0 "SLOW" 1 "SLOW" 2 "FAST";
+VAL_ 387 RightLight 0 "OFF" 1 "ON";
+VAL_ 387 LeftLight 0 "OFF" 1 "ON";
+VAL_ 387 FrontLight 0 "OFF" 1 "ON";
+VAL_ 387 Handbrake 0 "OFF" 1 "ON";
+VAL_ 387 SteerMode 0 "NORMAL" 1 "OPPOSITE" 2 "SYNCHRO";
+VAL_ 387 Gear 0 "NEUTRAL" 1 "FORWARD" 2 "NEUTRAL" 3 "REVERSE";
+
+BA_DEF_  "BusType" STRING ;
+BA_DEF_DEF_  "BusType" "CAN";
+
