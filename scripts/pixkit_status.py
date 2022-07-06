@@ -17,16 +17,17 @@ from pix_driver.msg import *
 
 packagePath = rospkg.RosPack().get_path( "pix_driver" )
 dbcFilename = "ros_units.dbc"
-dbc_path = os.path.join( packagePath, "src", dbcFilename )
+dbcPath = os.path.join( packagePath, "docs", dbcFilename )
 
-#rospy.get_param( "dbc_path" )
-can_type = rospy.get_param( "can_type")
-can_channel = rospy.get_param( "can_channel" )
+canType = rospy.get_param( "can_type")
+canChannel = rospy.get_param( "can_channel" )
+
+legacySupport = rospy.get_param( "legacy", True )
 
 def main():
-    rospy.init_node( "pixkit_status", log_level=rospy.DEBUG )
+    rospy.init_node( "pixkit_status", log_level=rospy.INFO )
 
-    db = cantools.database.load_file( dbc_path )
+    db = cantools.database.load_file( dbcPath )
 
     # === create a publisher for each message type ===
     pubs = {}
@@ -35,8 +36,21 @@ def main():
         # only publish frames from the VCU
         if "VCU" not in i.senders: continue
 
+        # backwards compatibility
+        # this is here to provide support for the original status message format that
+        # was described in the code actually provided by pix
+        if i.name == "pix_feedback" and not legacySupport: continue
+
         try:
-            pubs[i.frame_id] = rospy.Publisher( f"~{i.name}", getattr( pix_driver.msg, f"{i.name}_stamped" ), queue_size=1 )
+            stamped = i.name not in ("pix_feedback",)
+            topicName = f"{i.name}_stamped" if stamped else i.name
+            messageType = getattr( pix_driver.msg, topicName )
+            p = rospy.Publisher( f"~{i.name}", messageType, queue_size=1 )
+
+            if i.frame_id in pubs:
+                pubs[i.frame_id].append( ( stamped, i, p ) )
+            else:
+                pubs[i.frame_id] = [ ( stamped, i, p ) ]              
 
             # if we set up filters now we can be confident that every can message we
             # the bus yields later on, does exist, does have ros message and does have
@@ -44,15 +58,16 @@ def main():
             filters.append( {"can_id": i.frame_id, 
                              "can_mask": 0x1FFFFFFF, 
                              "extended": i.is_extended_frame} )
+
         except AttributeError:  # no corresponding msg for this frame
-            rospy.logwarn( f"No msg for {i.name}" )
+            rospy.logwarn( f"No status msg for {i.name}" )
 
     # === open can device ===
     try:
-        bus = can.interface.Bus( channel=can_channel, bustype=can_type,
+        bus = can.interface.Bus( channel=canChannel, bustype=canType,
                 can_filters=filters )
     except OSError:
-        rospy.logerr( f"Failed to open {can_channel}" )
+        rospy.logerr( f"Failed to open {canChannel}" )
         return 1
 
     # === main loop ===
@@ -62,21 +77,36 @@ def main():
         if msg is None:   # nothing recieved
             continue
 
-        # decode raw can bytes to dictionary
-        try:
-            data = db.decode_message( msg.arbitration_id, msg.data )
-            rospy.logdebug( f"{msg.arbitration_id}, {data}" )
-        except ValueError:
-            rospy.logwarn( f"{db.get_message_by_frame_id( msg.arbitration_id ).name} decoding failed" )
-
         # set up stamped message
-        messageStamped = pubs[msg.arbitration_id].data_class()
-        messageStamped.header.stamp = rospy.Time.now()
+        for stamped, dbc, pub in pubs[msg.arbitration_id]:
+            rospy.logdebug( dbc.name )
 
-        # convert decoded dictionary to ros message
-        messageStamped.data = message_converter.convert_dictionary_to_ros_message( f"pix_driver/{db.get_message_by_frame_id( msg.arbitration_id ).name}", data, check_types=False, check_missing_fields=True )
-        
-        pubs[msg.arbitration_id].publish( messageStamped )
+            # decode raw can bytes to dictionary
+            try:
+                data = dbc.decode( msg.data )
+            except ValueError:
+                rospy.logwarn( f"{dbc.name} decoding failed" )
+
+            if stamped:
+                msgType = f"pix_driver/{dbc.name}_stamped"
+                data = { "data": data }
+            else:
+                msgType = f"pix_driver/{dbc.name}"
+
+            message = message_converter.convert_dictionary_to_ros_message( msgType, data, check_types=False, check_missing_fields=False )
+
+            if stamped:
+                message.header.stamp = rospy.Time.now()
+
+            pub.publish( message )
+
+            #messageStamped = p.data_class()
+            #messageStamped.header.stamp = rospy.Time.now()
+
+            # convert decoded dictionary to ros message
+            #messageStamped.data = message_converter.convert_dictionary_to_ros_message( f"pix_driver/{dbc.name}", data, check_types=False, check_missing_fields=True )
+            
+            #pub.publish( messageStamped )
 
     bus.shutdown()
 

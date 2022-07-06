@@ -10,6 +10,7 @@ import os
 import rospkg
 import rospy
 from rospy_message_converter import message_converter
+from std_msgs.msg import Int16MultiArray
 # allow converstion from bool to int and int to bool
 #message_converter.ros_to_python_type_map["bool"] += copy.deepcopy( message_converter.python_int_types)
 
@@ -18,33 +19,37 @@ from pix_driver.msg import *
 
 packagePath = rospkg.RosPack().get_path( "pix_driver" )
 dbcFilename = "ros_units.dbc"
-dbc_path = os.path.join( packagePath, "src", dbcFilename )
+dbc_path = os.path.join( packagePath, "docs", dbcFilename )
 
 #rospy.get_param( "dbc_path" )
 can_type = rospy.get_param( "can_type")
 can_channel = rospy.get_param( "can_channel" )
+legacySupport = rospy.get_param( "legacy", True )
 
-def kill_switch( dbc, candata ):
+def kill_switch( frameId, candata ):
+    """ make absolutely certain that NO steering values over 1024
+        or speed values over 600 get sent, even if someone messes with the dbc file
+        I have good reasons to believe that this can damage the vehicle, but 
+        no definite proof """
+
     maxSteerRaw = 1024  # must be 1024, do not change on pain of pain
     maxSpeedRaw = 600   # must be 600, ditto ^
 
-    # make absolutely certain that NO steering values over maxSteerRaw
-    # or speed values over 600 get sent, even if someone messes with the dbc file
-    if dbc.frame_id == 387:
+    if frameId == 387:
         if maxSteerRaw < abs( int.from_bytes( candata[4:6], "little", signed=True ) ):
             raise ValueError( "Steering out of range" )
         
         if maxSpeedRaw < int.from_bytes( candata[0:2], "little", signed=False ):
             raise ValueError( "Speed out of range" )
 
-    elif dbc.frame_id == 390:
+    elif frameId == 390:
         if maxSteerRaw < abs( int.from_bytes( candata[0:2], "little", signed=True ) ):
             raise ValueError( "Front steering out of range" )
 
         if maxSteerRaw < abs( int.from_bytes( candata[6:8], "little", signed=True ) ):
             raise ValueError( "Rear steering out of range" )
 
-    elif dbc.frame_id == 392:
+    elif frameId == 392:
         if maxSpeedRaw < int.from_bytes( candata[0:2], "little", signed=False ):
             raise ValueError( "Front left speed out of range" )
 
@@ -56,6 +61,34 @@ def kill_switch( dbc, candata ):
             
         if maxSpeedRaw < int.from_bytes( candata[6:8], "little", signed=False ):
             raise ValueError( "Rear right speed out of range" )
+
+def legacy_callback( bus, dbc, rosdata ):
+
+    rospy.logdebug( f"legacy callback {rosdata}" )
+    try:
+        candata = dbc.encode( { "Speed": rosdata[0],
+                        "Steering": rosdata[1],
+                        "Braking": rosdata[2],
+                        "Gear": rosdata[3],
+                        "Handbrake": rosdata[4],             
+                        "RightLight": rosdata[5],
+                        "LeftLight": rosdata[6],
+                        "FrontLight": rosdata[7],
+                        "SelfDrive": rosdata[8],
+                        "SpeedMode": rosdata[9],
+                        "Advanced": rosdata[10],
+                        "SteerMode": rosdata[11],
+                        "Emergency": rosdata[12] } )
+        
+        rospy.logdebug( candata )
+
+        kill_switch( 387, candata )
+
+        bus.send( can.Message( arbitration_id=387, \
+                        data=candata ) )
+
+    except ( ValueError, cantools.database.errors.EncodeError ) as err:
+        rospy.logwarn_throttle_identical( 5, str(err) )
 
 def send_can_callback( bus, dbc, rosdata, limits={} ):
     #rospy.loginfo( rosdata )
@@ -77,7 +110,7 @@ def send_can_callback( bus, dbc, rosdata, limits={} ):
 
     # throw exception if the message that is about to be sent could 
     # cause damage
-    kill_switch( dbc, candata )
+    kill_switch( dbc.frame_id, candata )
 
     # send can frame
     bus.send( can.Message( arbitration_id=dbc.frame_id, data=candata ) )
@@ -89,7 +122,6 @@ def main():
 
     # === create a publisher for each message type ===
     subs = {}
-    filters = []
     for i in db.messages:
         # only subscribe to message that go to the VCU
         if "VCU" in i.senders: continue
@@ -102,20 +134,27 @@ def main():
                 if signal.name.lower() in ( "steering", "speed", "braking" ):
                     limits[signal.name] = ( signal.minimum, signal.maximum )
 
-            subs[i.frame_id] = rospy.Subscriber( f"~{i.name}", \
+            subs[i.name] = rospy.Subscriber( f"~{i.name}", \
                                 getattr( pix_driver.msg, f"{i.name}_stamped" ), \
                                 lambda m: send_can_callback( bus, dbc, m.data, limits ) )
 
-            filters.append( {"can_id": i.frame_id, 
-                             "can_mask": 0x1FFFFFFF, 
-                             "extended": i.is_extended_frame} )
         except AttributeError:  # no corresponding msg for this frame
-            rospy.logwarn( f"No msg for {i.name}" )
+            rospy.logwarn( f"No control msg for {i.name}" )
+
+    # === backwards compatibility ===
+    # this is here to provide support for the original 16bit int array format that
+    # was described in the code actually provided by pix
+    if legacySupport:
+        dbc = db.get_message_by_name( "pix_control" )
+
+        legacySub = rospy.Subscriber( "control_cmd", \
+                        Int16MultiArray, 
+                        lambda m: legacy_callback( bus, dbc, m.data ) )
 
     # === open can device ===
     try:
         bus = can.interface.Bus( channel=can_channel, bustype=can_type,
-                    can_filters=filters )
+                    can_filters=[] )
     except OSError:
         rospy.logerr( f"Failed to open {can_channel}" )
         return 1
