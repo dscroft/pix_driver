@@ -1,64 +1,82 @@
-#!/usr/bin/env python
-import rospy
-from std_msgs.msg import Int16MultiArray
-import std_msgs.msg
-from dbc import decode_dbc
+#!/usr/bin/env python3
+
+""" here to provide support for the same multiarray format message that 
+   is used by the offical pix_drive but with added bounds limiting to 
+   ensure no hardware issues """
+
 import can
+import cantools
+import os
 
+import software_fuse
 
-dbc_path = rospy.get_param("dbc_path")
-can_type = rospy.get_param("can_type")
-can_channel = rospy.get_param("can_channel")
+import rospkg
+import rospy
+import std_msgs.msg
 
-ms = decode_dbc(dbc_path)
-m = ms.get_message_by_name('Auto_control')
-code = m.encode({'Steering': 0})
+packagePath = rospkg.RosPack().get_path( "pix_driver" )
+dbcFilename = "legacy.dbc"
+dbcPath = os.path.join( packagePath, "docs", dbcFilename )
 
-bus = can.interface.Bus(bustype=can_type, channel=can_channel, bitrate=500000)
+canType = rospy.get_param( "can_type" )
+canChannel = rospy.get_param( "can_channel" )
 
-
-pub = rospy.Publisher('canbus_message', Int16MultiArray, queue_size=1)
-
-def callback(data):
+def legacy_callback( bus, dbc, pub, rosdata ):
+    rospy.logdebug( f"ros data: {rosdata}" )
     try:
-        speed = data.data[0]
-        if speed < 0:
-            speed = 0
-        can_message = m.encode({
-            'Speed': speed,
-            'Steering': data.data[1],
-            'Braking': data.data[2],
-            'Gear_shift': data.data[3],
-            'EPB': data.data[4],
-            'right_light': data.data[5],
-            'left_light': data.data[6],
-            'Front_light': data.data[7],
-            'self_driving_enable': data.data[8],
-            'Speed_mode': data.data[9],
-            'Advanced_mode': data.data[10],
-            'mode_selection': data.data[11],
-            'State_control': data.data[12]
-            })
-        can_message = [387] + can_message
+        data = { "Speed": rosdata[0],
+                 "Steering": rosdata[1],
+                 "Braking": rosdata[2],
+                 "Gear": rosdata[3],
+                 "Handbrake": rosdata[4],             
+                 "RightLight": rosdata[5],
+                 "LeftLight": rosdata[6],
+                 "FrontLight": rosdata[7],
+                 "SelfDrive": rosdata[8],
+                 "SpeedMode": rosdata[9],
+                 "Advanced": rosdata[10],
+                 "SteerMode": rosdata[11],
+                 "Emergency": rosdata[12] }
+        rospy.logdebug( f"data: {data}" )
 
-    except:
-        can_message = [387] + 8*[0]
-    send_message = can.Message(arbitration_id=387, data=can_message[1:], is_extended_id=False)
-    bus.send(send_message)
-    message = Int16MultiArray(data=can_message)
-    rospy.loginfo(message.data)
-    pub.publish(message)
+        candata = dbc.encode( data )
+        rospy.logdebug( f"candata: {candata}" )
 
+        software_fuse.check( 387, candata )
 
+        bus.send( can.Message( arbitration_id=dbc.frame_id, 
+                               data=candata, 
+                               is_extended_id=dbc.is_extended_frame ) )
 
-def listener():
-    rospy.init_node('listener', anonymous=True)
-    rospy.Subscriber("control_cmd", Int16MultiArray, callback)
+        message = std_msgs.msg.Int16MultiArray( data=candata )
+        pub.publish( message )
+
+    except ( ValueError, cantools.database.errors.EncodeError ) as err:
+        rospy.logwarn_throttle_identical( 5, str(err) )
+
+def main():
+    rospy.init_node( "listener", anonymous=True, log_level=rospy.INFO )
+
+    db = cantools.database.load_file( dbcPath )
+
+    dbc = db.get_message_by_frame_id( 387 )
+
+    # === open can device ===
+    try:
+        bus = can.interface.Bus( channel=canChannel, bustype=canType,
+                    can_filters=[] )
+    except OSError:
+        rospy.logerr( f"Failed to open {canChannel}" )
+        return 1
+
+    pub = rospy.Publisher( "canbus_message", std_msgs.msg.Int16MultiArray, queue_size=1 )
+
+    sub = rospy.Subscriber( "control_cmd", std_msgs.msg.Int16MultiArray, lambda m: legacy_callback( bus, dbc, pub, m.data ) )
+    
     rospy.spin()
-
 
 if __name__ == "__main__":
     try:
-        listener()
+        main()
     except rospy.ROSInterruptException:
         pass
