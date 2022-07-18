@@ -25,12 +25,12 @@ bool Light_On = 1
 bool SelfDrive_Off = 0
 bool SelfDrive_On = 1
 
+uint8 SpeedMode_Fast = 0
 uint8 SpeedMode_Slow = 1
-uint8 SpeedMode_Fast = 2
 
 uint8 SteerMode_Opposite = 1
-uint8 SteerMode_Normal = 0
-uint8 SteerMode_Synchro = 2
+uint8 SteerMode_Normal = 2
+uint8 SteerMode_Synchro = 3
 
 bool Advanced_Off = 0
 bool Advanced_On = 1

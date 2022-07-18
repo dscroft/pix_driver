@@ -19,13 +19,13 @@ packagePath = rospkg.RosPack().get_path( "pix_driver" )
 dbcFilename = "ros_units.dbc"
 dbcPath = os.path.join( packagePath, "docs", dbcFilename )
 
-canType = rospy.get_param( "can_type")
+canType = rospy.get_param( "can_type" )
 canChannel = rospy.get_param( "can_channel" )
 
 legacySupport = rospy.get_param( "legacy", True )
 
 def main():
-    rospy.init_node( "pixkit_status", log_level=rospy.INFO )
+    rospy.init_node( "pixkit_status", log_level=rospy.DEBUG )
 
     db = cantools.database.load_file( dbcPath )
 
@@ -62,6 +62,8 @@ def main():
         except AttributeError:  # no corresponding msg for this frame
             rospy.logwarn( f"No status msg for {i.name}" )
 
+    rospy.logdebug( f"filters: {filters}" )
+
     # === open can device ===
     try:
         bus = can.interface.Bus( channel=canChannel, bustype=canType,
@@ -76,6 +78,8 @@ def main():
         msg = bus.recv( 1 )
         if msg is None:   # nothing recieved
             continue
+            
+        if msg.arbitration_id not in pubs: continue # why does the filter let some stuff through?
 
         # set up stamped message
         for stamped, dbc, pub in pubs[msg.arbitration_id]:
@@ -86,6 +90,14 @@ def main():
                 data = dbc.decode( msg.data )
             except ValueError:
                 rospy.logwarn( f"{dbc.name} decoding failed" )
+
+            rospy.logdebug( f"{dbc.name} {data}" )
+            
+            for k, v in data.items():
+            	if isinstance(v, cantools.database.can.signal.NamedSignalValue):
+            	    data[k] = v.value
+
+            rospy.logdebug( f"{dbc.name} {data}" )
 
             if stamped:
                 msgType = f"pix_driver/{dbc.name}_stamped"
