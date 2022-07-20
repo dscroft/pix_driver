@@ -6,7 +6,7 @@ bool Handbrake
 bool RightLight
 bool LeftLight
 bool FrontLight
-bool SelfDrive
+bool DriveMode
 uint8 SpeedMode
 uint8 SteerMode
 bool Advanced
@@ -22,8 +22,8 @@ bool Handbrake_On = 1
 bool Light_Off = 0
 bool Light_On = 1
 
-bool SelfDrive_Off = 0
-bool SelfDrive_On = 1
+bool DriveMode_Remote = 0
+bool DriveMode_Autonomous = 1
 
 uint8 SpeedMode_Fast = 0
 uint8 SpeedMode_Slow = 1

@@ -57,10 +57,12 @@ BO_ 408 Auto_motor_speed_feedback: 8 VCU
  SG_ LF_Wheel_speed_feedback : 0|16@1- (0.027777777777778,0) [0|32767] "m/s" Vector__XXX
 
 BO_ 406 Auto_steer_status_feedback: 5 VCU
- SG_ B_steer_status_feedback : 34|2@1+ (1,0) [0|1] "off/on" Vector__XXX
- SG_ F_steer_status_feedback : 32|2@1+ (1,0) [0|1] "off/on" Vector__XXX
- SG_ B_steer_angle_feedback : 16|16@1- (0.000511326929295,0) [-1024|1024] "radians" Vector__XXX
- SG_ F_steer_angle_feedback : 0|16@1- (0.000511326929295,0) [-1024|1024] "radians" Vector__XXX
+ SG_ RearSteering : 34|2@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ FrontSteering : 32|2@1+ (1,0) [0|1] "off/on" Vector__XXX
+ SG_ RearSteeringAngle : 16|16@1- (0.000511326929295,0) [-0.523598775598299|0.523598775598299] "radians" Vector__XXX
+ SG_ FrontSteeringAngle : 0|16@1- (0.000511326929295,0) [-0.523598775598299|0.523598775598299] "radians" Vector__XXX
+
+VAL_ 406 B_steer_status_feedback 0 "OFF" 1 "ON";
 
 BO_ 404 Auto_status_feedback: 4 VCU
  SG_ Discharge_current_feedback : 16|16@1- (1,0) [0|0] "" Vector__XXX
@@ -98,7 +100,7 @@ BO_ 390 Auto_steer_control: 8 Auto
  SG_ F_steer_angle : 0|16@1- (1,0) [0|0] "" Vector__XXX
 
 BO_ 387 Auto_control: 8 Auto
- SG_ DriveMode : 63|1@1+ (1,0) [0|1] "autonomous/remote" Vector__XXX
+ SG_ DriveMode : 63|1@1+ (1,0) [0|1] "remote/autonomous" Vector__XXX
  SG_ Advanced : 61|1@1+ (1,0) [0|1] "off/on" Vector__XXX
  SG_ Emergency : 57|1@1+ (1,0) [0|0] "off/on" Vector__XXX
  SG_ SpeedMode : 62|1@1+ (1,0) [0|1] "fast/slow" Vector__XXX
@@ -112,7 +114,7 @@ BO_ 387 Auto_control: 8 Auto
  SG_ Braking : 16|16@1+ (0.0009765625,0) [0|1] "proportion" Vector__XXX
  SG_ Speed : 0|16@1+ (0.027777777777778,0) [0|16.6666666666667] "m/s" Vector__XXX
 
-VAL_ 387 DriveMode 0 "AUTONOMOUS" 1 "REMOTE";
+VAL_ 387 DriveMode 0 "REMOTE" 1 "AUTONOMOUS";
 VAL_ 387 Advanced 0 "OFF" 1 "ON";
 VAL_ 387 Emergency 0 "OFF" 1 "ON";
 VAL_ 387 SpeedMode 0 "FAST" 1 "SLOW";
@@ -125,7 +127,7 @@ VAL_ 387 Gear 0 "NEUTRAL" 1 "FORWARD" 2 "NEUTRAL" 3 "REVERSE";
 
 BO_ 403 Auto_data_feedback: 8 VCU
  SG_ Emergency : 62|1@1+ (1,0) [0|1] "off/on" Vector__XXX
- SG_ DriveMode : 61|1@1+ (1,0) [0|1] "autonomous/remote" Vector__XXX
+ SG_ DriveMode : 61|1@1+ (1,0) [0|1] "remote/autonomous" Vector__XXX
  SG_ Status : 60|1@1+ (1,0) [0|1] "normal/error" Vector__XXX
  SG_ BrakeLight : 59|1@1+ (1,0) [0|1] "off/on" Vector__XXX
  SG_ FrontLight : 58|1@1+ (1,0) [0|1] "off/on" Vector__XXX
@@ -134,11 +136,11 @@ BO_ 403 Auto_data_feedback: 8 VCU
  SG_ SteerMode : 52|2@1+ (1,0) [0|3] "normal/opposite/normal/synchro" Vector__XXX
  SG_ Gear : 48|2@1+ (1,0) [0|3] "neutral/forward/neutral/reverse" Vector__XXX
  SG_ Braking : 32|16@1+ (1,0) [0|1000] "proportion" Vector__XXX
- SG_ Steering : 16|16@1- (1,-750) [650|850] "radians" Vector__XXX
+ SG_ Steering : 16|16@1- (0.01745329252,-13.08996939) [11.344640138|14.835298642] "radians" Vector__XXX
  SG_ Speed : 0|16@1- (0.1,0) [-600|600] "m/s" Vector__XXX
 
 VAL_ 403 Status 0 "NORMAL" 1 "ERROR";
-VAL_ 403 DriveMode 0 "AUTONOMOUS" 1 "REMOTE";
+VAL_ 403 DriveMode 0 "REMOTE" 1 "AUTONOMOUS";
 VAL_ 403 Advanced 0 "OFF" 1 "ON";
 VAL_ 403 Emergency 0 "OFF" 1 "ON";
 VAL_ 403 SpeedMode 0 "FAST" 1 "SLOW";

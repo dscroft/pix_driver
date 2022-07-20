@@ -1,4 +1,7 @@
-bool B_steer_status_feedback
-bool F_steer_status_feedback
-float64 B_steer_angle_feedback
-float64 F_steer_angle_feedback
+bool RearSteering
+bool FrontSteering
+float64 RearSteeringAngle
+float64 FrontSteeringAngle
+
+bool Steering_Off = 0
+bool Steering_On = 1
