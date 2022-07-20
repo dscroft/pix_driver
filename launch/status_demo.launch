@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="can_channel" default="can0" />
+    <arg name="can_type" default="socketcan" />
+
+    <param name="can_channel" value="$(arg can_channel)" />
+    <param name="can_type" value="$(arg can_type)" />
+
+    <node name="pixkit_status" 
+            pkg="pix_driver" type="pixkit_status.py" 
+            required="true"
+            output="screen">
+    </node>
+
+
+</launch>
